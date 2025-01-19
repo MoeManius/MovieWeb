@@ -1,73 +1,64 @@
-from flask_sqlalchemy import SQLAlchemy
-from datamanager.data_manager_interface import DataManagerInterface
-
-# Initialize the database
-db = SQLAlchemy()
-
-class User(db.Model):
-    """Define the User model."""
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-
-    # Relationship with movies
-    movies = db.relationship('Movie', backref='user', lazy=True)
-
-
-class Movie(db.Model):
-    """Define the Movie model."""
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    director = db.Column(db.String(100), nullable=False)
-    year = db.Column(db.Integer, nullable=False)
-    rating = db.Column(db.Float, nullable=True)
-
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+from datamanager.datamanager_interface import DataManagerInterface
+from models import db, User, Movie
 
 
 class SQLiteDataManager(DataManagerInterface):
     def __init__(self, app, db_file_name):
-        self.app = app
+        # Initialize the Flask app and set up SQLAlchemy
         app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{db_file_name}"
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
         db.init_app(app)
+        self.app = app
+        self.db = db
 
-    # 1. Get all users
     def get_all_users(self):
-        return User.query.all()
+        """Fetch all users from the database"""
+        users = User.query.all()  # Using SQLAlchemy ORM to query all users
+        return users
 
-    # 2. Get all movies for a specific user
     def get_user_movies(self, user_id):
-        return Movie.query.filter_by(user_id=user_id).all()
+        """Fetch all movies for a given user from the database"""
+        user = User.query.get(user_id)
+        if user:
+            return user.movies  # Using relationship to get all movies of the user
+        else:
+            return []
 
-    # 3. Add a new user (static method)
-    @staticmethod
-    def add_user(user):
-        db.session.add(user)
-        db.session.commit()
+    def add_user(self, user):
+        """Add a new user to the database"""
+        db.session.add(user)  # Add the user instance to the session
+        db.session.commit()  # Commit to save the user in the database
 
-    # 4. Add a new movie
     def add_movie(self, user_id, movie):
-        movie.user_id = user_id  # Associate the movie with the user
-        db.session.add(movie)
-        db.session.commit()
+        """Add a new movie for a user"""
+        user = User.query.get(user_id)
+        if user:
+            user.movies.append(movie)  # Add movie to the user's movies list
+            db.session.commit()  # Commit the transaction
+        else:
+            raise ValueError(f"User with ID {user_id} does not exist")
 
-    # 5. Update a movie's details
-    def update_movie(self, user_id, movie_id, updated_movie):
-        movie = Movie.query.filter_by(user_id=user_id, id=movie_id).first()
-        if movie:
-            movie.name = updated_movie.name
-            movie.director = updated_movie.director
-            movie.year = updated_movie.year
-            movie.rating = updated_movie.rating
-            db.session.commit()
+    def update_movie(self, user_id, movie_id, movie):
+        """Update a movie's details in the database"""
+        movie_to_update = Movie.query.filter_by(id=movie_id, user_id=user_id).first()
+        if movie_to_update:
+            movie_to_update.name = movie.name
+            movie_to_update.director = movie.director
+            movie_to_update.year = movie.year
+            movie_to_update.rating = movie.rating
+            db.session.commit()  # Commit the transaction
+        else:
+            raise ValueError(f"Movie with ID {movie_id} for User {user_id} not found")
 
-    # 6. Delete a movie
     def delete_movie(self, user_id, movie_id):
-        movie = Movie.query.filter_by(user_id=user_id, id=movie_id).first()
-        if movie:
-            db.session.delete(movie)
-            db.session.commit()
+        """Delete a specific movie from the user's list"""
+        movie_to_delete = Movie.query.filter_by(id=movie_id, user_id=user_id).first()
+        if movie_to_delete:
+            db.session.delete(movie_to_delete)  # Remove the movie from the session
+            db.session.commit()  # Commit the transaction
+        else:
+            raise ValueError(f"Movie with ID {movie_id} for User {user_id} not found")
 
-    # 7. Get a movie by its ID for a specific user
     def get_movie_by_id(self, user_id, movie_id):
-        return Movie.query.filter_by(user_id=user_id, id=movie_id).first()
+        """Fetch a specific movie for a user"""
+        return Movie.query.filter_by(id=movie_id, user_id=user_id).first()
