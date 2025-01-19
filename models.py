@@ -3,27 +3,28 @@ from flask_sqlalchemy import SQLAlchemy
 db = SQLAlchemy()
 
 class User(db.Model):
-    """User model to represent application users."""
+    """Represents a user in the MovieWeb App."""
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
+    name = db.Column(db.String(100), nullable=False, unique=True)
+
     movies = db.relationship('Movie', backref='user', lazy=True)
 
     def __repr__(self):
-        return f"<User {self.id}: {self.name}>"
-
+        return f"<User(id={self.id}, name='{self.name}')>"
 
 class Movie(db.Model):
-    """Movie model to represent movies associated with users."""
+    """Represents a movie associated with a user."""
     __tablename__ = 'movies'
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
-    director = db.Column(db.String(100), nullable=True)
-    year = db.Column(db.Integer, nullable=True)
-    rating = db.Column(db.Float, nullable=True)
+    director = db.Column(db.String(200), nullable=False)
+    year = db.Column(db.Integer, nullable=False)
+    rating = db.Column(db.Float, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
     def __repr__(self):
-        return f"<Movie {self.id}: {self.name} ({self.year})>"
+        return (f"<Movie(id={self.id}, name='{self.name}', director='{self.director}', "
+                f"year={self.year}, rating={self.rating}, user_id={self.user_id})>")

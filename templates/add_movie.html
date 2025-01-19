@@ -3,42 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Movie - MovieWeb App</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <title>Add Movie</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body>
-    <div class="container">
-        <h1 class="mt-4">Add Movie to {{ user.name }}'s List</h1>
-
-        <form action="{{ url_for('add_movie', user_id=user.id) }}" method="POST">
-            <div class="form-group">
-                <label for="name">Movie Name</label>
-                <input type="text" class="form-control" id="name" name="name" required>
-            </div>
-
-            <div class="form-group">
-                <label for="director">Director</label>
-                <input type="text" class="form-control" id="director" name="director" required>
-            </div>
-
-            <div class="form-group">
-                <label for="year">Year of Release</label>
-                <input type="number" class="form-control" id="year" name="year" required>
-            </div>
-
-            <div class="form-group">
-                <label for="rating">Rating</label>
-                <input type="number" step="0.1" class="form-control" id="rating" name="rating" required>
-            </div>
-
-            <button type="submit" class="btn btn-primary">Add Movie</button>
-            <a href="{{ url_for('user_movies', user_id=user.id) }}" class="btn btn-secondary">Cancel</a>
-        </form>
-    </div>
-
-    <!-- Optional: Add Bootstrap JS for some interactive elements (like dropdowns, modals) -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <h1>Add Movie</h1>
+    <form method="POST" action="/users/{{ user_id }}/add_movie">
+        <label for="name">Movie Name:</label>
+        <input type="text" id="name" name="name" required>
+        <label for="director">Director:</label>
+        <input type="text" id="director" name="director" required>
+        <label for="year">Year:</label>
+        <input type="number" id="year" name="year" required>
+        <label for="rating">Rating:</label>
+        <input type="number" id="rating" name="rating" step="0.1" required>
+        <button type="submit">Add Movie</button>
+    </form>
+    <a href="/users/{{ user_id }}">Go Back</a>
 </body>
 </html>
