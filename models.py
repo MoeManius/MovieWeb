@@ -2,29 +2,53 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
+
 class User(db.Model):
-    """Represents a user in the MovieWeb App."""
     __tablename__ = 'users'
+    user_id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(100), unique=True, nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False)
+    password = db.Column(db.String(100), nullable=False)
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False, unique=True)
+    # Relationship to movies through UserMovie (Many-to-Many)
+    movies = db.relationship('Movie', secondary='user_movie', back_populates="users")
 
-    movies = db.relationship('Movie', backref='user', lazy=True)
+    # Relationship to reviews (One-to-Many)
+    reviews = db.relationship('Review', backref='user', lazy=True)
 
-    def __repr__(self):
-        return f"<User(id={self.id}, name='{self.name}')>"
 
 class Movie(db.Model):
-    """Represents a movie associated with a user."""
     __tablename__ = 'movies'
+    movie_id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    genre = db.Column(db.String(100))
+    rating = db.Column(db.Float)
+    release_year = db.Column(db.Integer)
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(200), nullable=False)
-    director = db.Column(db.String(200), nullable=False)
-    year = db.Column(db.Integer, nullable=False)
+    # Relationship to users through UserMovie (Many-to-Many)
+    users = db.relationship('User', secondary='user_movie', back_populates="movies")
+
+    # Relationship to reviews (One-to-Many)
+    reviews = db.relationship('Review', backref='movie', lazy=True)
+
+
+class UserMovie(db.Model):
+    __tablename__ = 'user_movie'
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), primary_key=True)
+    movie_id = db.Column(db.Integer, db.ForeignKey('movies.movie_id'), primary_key=True)
+
+
+class Review(db.Model):
+    __tablename__ = 'reviews'
+    review_id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    movie_id = db.Column(db.Integer, db.ForeignKey('movies.movie_id'), nullable=False)
+    review_text = db.Column(db.Text, nullable=True)
     rating = db.Column(db.Float, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    date_posted = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
 
-    def __repr__(self):
-        return (f"<Movie(id={self.id}, name='{self.name}', director='{self.director}', "
-                f"year={self.year}, rating={self.rating}, user_id={self.user_id})>")
+    def __init__(self, user_id, movie_id, review_text, rating):
+        self.user_id = user_id
+        self.movie_id = movie_id
+        self.review_text = review_text
+        self.rating = rating

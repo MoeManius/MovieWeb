@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ movie.title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <header>
+        <h1>{{ movie.title }}</h1>
+        <p><strong>Genre:</strong> {{ movie.genre }} | <strong>Rating:</strong> {{ movie.rating }} | <strong>Release Year:</strong> {{ movie.release_year }}</p>
+    </header>
+
+    <section class="movie-reviews">
+        <h2>Reviews</h2>
+        {% if reviews %}
+            <ul>
+                {% for review in reviews %}
+                    <li>
+                        <strong>{{ review.user.username }}:</strong> {{ review.review_text }} <br>
+                        <strong>Rating:</strong> {{ review.rating }} / 10
+                        <form action="{{ url_for('delete_review', movie_id=movie.movie_id, review_id=review.review_id) }}" method="POST">
+                            <button type="submit">Delete Review</button>
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No reviews yet. Be the first to review this movie!</p>
+        {% endif %}
+    </section>
+
+    <section class="add-review">
+        <h2>Add a Review</h2>
+        <form action="{{ url_for('add_review', movie_id=movie.movie_id) }}" method="POST">
+            <textarea name="review_text" placeholder="Write your review here" required></textarea><br>
+            <label for="rating">Rating:</label>
+            <input type="number" name="rating" min="0" max="10" step="0.1" required><br>
+            <button type="submit">Submit Review</button>
+        </form>
+    </section>
+
+    <footer>
+        <a href="{{ url_for('view_user_movies', user_id=user.user_id) }}">Back to Favorite Movies</a>
+    </footer>
+</body>
+</html>
