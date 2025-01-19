@@ -1,75 +1,62 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
-from models import db, User, Movie, UserMovie, Review
-import os
 from dotenv import load_dotenv
+import os
+from api import api  # Import the API Blueprint
 
+# Load environment variables from the .env file
 load_dotenv()
 
+# Initialize the Flask app
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
+
+# Configure the database URI from the environment variable
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///movieapp.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.secret_key = os.getenv('SECRET_KEY')
 
-db.init_app(app)
+# Initialize the SQLAlchemy extension
+db = SQLAlchemy(app)
 
+# Register the API Blueprint to expose API endpoints
+app.register_blueprint(api)
 
-# Route to view movie details and its reviews
-@app.route('/movie/<int:movie_id>', methods=['GET'])
-def view_movie(movie_id):
-    movie = Movie.query.get_or_404(movie_id)
-    reviews = Review.query.filter_by(movie_id=movie_id).all()
-    return render_template('view_movie.html', movie=movie, reviews=reviews)
+# Define models here or import from the models file
+# from models import User, Movie
 
+# Routes for main app
+@app.route('/')
+def index():
+    return render_template('index.html')
 
-# Route to add a review for a movie
-@app.route('/movie/<int:movie_id>/add_review', methods=['POST'])
-def add_review(movie_id):
-    movie = Movie.query.get_or_404(movie_id)
-    user_id = 1  # This would come from the logged-in user, assuming user_id is 1 for now
-    review_text = request.form['review_text']
-    rating = float(request.form['rating'])
+# Additional routes (your other routes go here)
+@app.route('/users')
+def users():
+    # Example logic for getting all users
+    from models import User
+    users = User.query.all()
+    return render_template('users.html', users=users)
 
-    # Add the review to the database
-    new_review = Review(user_id=user_id, movie_id=movie_id, review_text=review_text, rating=rating)
-    db.session.add(new_review)
-    db.session.commit()
+# Other routes for movies, user interaction, etc. go here
+# You can define other routes like:
+# - Add user
+# - Add movie
+# - Update movie
+# - Delete movie
+# and use SQLAlchemy to interact with the database
 
-    flash('Review added successfully!')
-    return redirect(url_for('view_movie', movie_id=movie_id))
+# Handle 404 errors
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
 
+# Handle other HTTP errors
+@app.errorhandler(400)
+def bad_request(e):
+    return render_template('400.html'), 400
 
-# Route to delete a review
-@app.route('/movie/<int:movie_id>/delete_review/<int:review_id>', methods=['POST'])
-def delete_review(movie_id, review_id):
-    review = Review.query.get_or_404(review_id)
-    db.session.delete(review)
-    db.session.commit()
-
-    flash('Review deleted successfully!')
-    return redirect(url_for('view_movie', movie_id=movie_id))
-
-
-# Route to add a movie to a user's favorites
-@app.route('/users/<int:user_id>/add_movie/<int:movie_id>', methods=['POST'])
-def add_movie_to_user(user_id, movie_id):
-    user = User.query.get_or_404(user_id)
-    movie = Movie.query.get_or_404(movie_id)
-
-    if movie not in user.movies:
-        user.movies.append(movie)
-        db.session.commit()
-        flash(f'{movie.title} added to your favorite movies!')
-
-    return redirect(url_for('view_user_movies', user_id=user_id))
-
-
-# Route to view user and their favorite movies
-@app.route('/users/<int:user_id>/movies')
-def view_user_movies(user_id):
-    user = User.query.get_or_404(user_id)
-    return render_template('movie_list.html', user=user, movies=user.movies)
-
+@app.errorhandler(500)
+def internal_server_error(e):
+    return render_template('500.html'), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
